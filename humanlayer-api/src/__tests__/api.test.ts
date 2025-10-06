@@ -2,6 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import request from 'supertest'
 import { createApp } from '../index.js'
 import { getDb } from '../db/database.js'
+import {
+  functionCallStatus,
+  functionCalls,
+  humanContactStatus,
+  humanContacts,
+} from '../db/schema.js'
 
 const app = createApp()
 
@@ -9,10 +15,10 @@ describe('HumanLayer API Integration Tests', () => {
   beforeEach(() => {
     // Clean database before each test
     const db = getDb().getDatabase()
-    db.exec('DELETE FROM function_call_status')
-    db.exec('DELETE FROM function_calls')
-    db.exec('DELETE FROM human_contact_status')
-    db.exec('DELETE FROM human_contacts')
+    db.delete(functionCallStatus).run()
+    db.delete(functionCalls).run()
+    db.delete(humanContactStatus).run()
+    db.delete(humanContacts).run()
   })
 
   describe('Health & Auth Tests', () => {

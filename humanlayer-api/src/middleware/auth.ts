@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
+import { eq, and } from 'drizzle-orm'
 import { getDb } from '../db/database.js'
+import { apiKeys } from '../db/schema.js'
 import crypto from 'crypto'
 
 export interface AuthenticatedRequest extends Request {
@@ -28,8 +30,10 @@ export function authenticateToken(
   const keyHash = hashApiKey(token)
   const db = getDb().getDatabase()
   const apiKey = db
-    .prepare('SELECT * FROM api_keys WHERE key_hash = ? AND is_active = 1')
-    .get(keyHash) as { id: number; key_hash: string } | undefined
+    .select()
+    .from(apiKeys)
+    .where(and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.isActive, true)))
+    .get()
 
   if (!apiKey) {
     res.status(401).json({
@@ -42,7 +46,10 @@ export function authenticateToken(
   }
 
   // Update last_used_at
-  db.prepare('UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?').run(apiKey.id)
+  db.update(apiKeys)
+    .set({ lastUsedAt: new Date() })
+    .where(eq(apiKeys.id, apiKey.id))
+    .run()
 
   req.apiKey = token
   next()

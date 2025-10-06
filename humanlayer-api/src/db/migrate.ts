@@ -1,4 +1,6 @@
+import { eq } from 'drizzle-orm'
 import { getDb } from './database.js'
+import { apiKeys } from './schema.js'
 import { hashApiKey } from '../middleware/auth.js'
 import { config } from '../config.js'
 
@@ -11,17 +13,19 @@ console.log('✅ Schema migrations complete')
 
 // Seed default API key for development
 const defaultKey = config.auth.defaultApiKey
-const { hash, prefix } = {
-  hash: hashApiKey(defaultKey),
-  prefix: defaultKey.substring(0, 8),
-}
+const hash = hashApiKey(defaultKey)
+const prefix = defaultKey.substring(0, 8)
 
-const existing = db.getDatabase().prepare('SELECT id FROM api_keys WHERE key_hash = ?').get(hash)
+const existing = db.getDatabase().select().from(apiKeys).where(eq(apiKeys.keyHash, hash)).get()
 
 if (!existing) {
   db.getDatabase()
-    .prepare('INSERT INTO api_keys (key_hash, key_prefix) VALUES (?, ?)')
-    .run(hash, prefix)
+    .insert(apiKeys)
+    .values({
+      keyHash: hash,
+      keyPrefix: prefix,
+    })
+    .run()
   console.log('✅ Default API key created:', prefix + '...')
 } else {
   console.log('✅ Default API key already exists')

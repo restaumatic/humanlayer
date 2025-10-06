@@ -1,119 +1,107 @@
-import Database from 'better-sqlite3'
+import { eq } from 'drizzle-orm'
+import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { HumanContact, HumanContactStatus } from '../../types/models.js'
+import * as schema from '../schema.js'
 
 export class HumanContactRepository {
-  constructor(private db: Database.Database) {}
+  constructor(private db: BetterSQLite3Database<typeof schema>) {}
 
   create(contact: HumanContact): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO human_contacts (call_id, run_id, msg, subject, channel, response_options, state)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `)
+    // Insert human contact
+    this.db.insert(schema.humanContacts).values({
+      callId: contact.call_id,
+      runId: contact.run_id,
+      msg: contact.spec.msg,
+      subject: contact.spec.subject ?? null,
+      channel: contact.spec.channel ? JSON.stringify(contact.spec.channel) : null,
+      responseOptions: contact.spec.response_options
+        ? JSON.stringify(contact.spec.response_options)
+        : null,
+      state: contact.spec.state ? JSON.stringify(contact.spec.state) : null,
+    }).run()
 
-    stmt.run(
-      contact.call_id,
-      contact.run_id,
-      contact.spec.msg,
-      contact.spec.subject || null,
-      contact.spec.channel ? JSON.stringify(contact.spec.channel) : null,
-      contact.spec.response_options ? JSON.stringify(contact.spec.response_options) : null,
-      contact.spec.state ? JSON.stringify(contact.spec.state) : null
-    )
-
-    // Initialize status if provided
+    // Insert status
     if (contact.status) {
       this.updateStatus(contact.call_id, contact.status)
     } else {
-      const statusStmt = this.db.prepare(`
-        INSERT INTO human_contact_status (call_id, requested_at)
-        VALUES (?, CURRENT_TIMESTAMP)
-      `)
-      statusStmt.run(contact.call_id)
+      this.db.insert(schema.humanContactStatus).values({
+        callId: contact.call_id,
+        requestedAt: new Date(),
+      }).run()
     }
   }
 
   findById(call_id: string): HumanContact | null {
-    const row = this.db
-      .prepare(
-        `
-      SELECT
-        hc.*,
-        hcs.requested_at,
-        hcs.responded_at,
-        hcs.response,
-        hcs.response_option_name
-      FROM human_contacts hc
-      LEFT JOIN human_contact_status hcs ON hc.call_id = hcs.call_id
-      WHERE hc.call_id = ?
-    `
+    const result = this.db
+      .select()
+      .from(schema.humanContacts)
+      .leftJoin(
+        schema.humanContactStatus,
+        eq(schema.humanContacts.callId, schema.humanContactStatus.callId)
       )
-      .get(call_id) as any
+      .where(eq(schema.humanContacts.callId, call_id))
+      .get()
 
-    if (!row) return null
+    if (!result) return null
 
-    return this.rowToHumanContact(row)
+    return this.rowToHumanContact(result)
   }
 
   updateStatus(call_id: string, status: Partial<HumanContactStatus>): void {
-    // Build dynamic UPDATE query based on provided fields
-    const updates: string[] = []
-    const params: any[] = []
+    const updates: Partial<typeof schema.humanContactStatus.$inferInsert> = {}
 
     if ('requested_at' in status && status.requested_at !== undefined) {
-      updates.push('requested_at = ?')
-      params.push(
-        status.requested_at instanceof Date ? status.requested_at.toISOString() : status.requested_at
-      )
+      updates.requestedAt = status.requested_at
     }
-
     if ('responded_at' in status && status.responded_at !== undefined) {
-      updates.push('responded_at = ?')
-      params.push(
-        status.responded_at instanceof Date ? status.responded_at.toISOString() : status.responded_at
-      )
+      updates.respondedAt = status.responded_at
     }
-
     if ('response' in status && status.response !== undefined) {
-      updates.push('response = ?')
-      params.push(status.response)
+      updates.response = status.response
     }
-
     if ('response_option_name' in status && status.response_option_name !== undefined) {
-      updates.push('response_option_name = ?')
-      params.push(status.response_option_name)
+      updates.responseOptionName = status.response_option_name
     }
 
-    if (updates.length === 0) {
+    if (Object.keys(updates).length === 0) {
       return // Nothing to update
     }
 
-    params.push(call_id)
+    // Try to update first
+    const result = this.db
+      .update(schema.humanContactStatus)
+      .set(updates)
+      .where(eq(schema.humanContactStatus.callId, call_id))
+      .run()
 
-    const stmt = this.db.prepare(`
-      UPDATE human_contact_status
-      SET ${updates.join(', ')}
-      WHERE call_id = ?
-    `)
-
-    stmt.run(...params)
+    // If no rows updated, insert a new status row
+    if (result.changes === 0) {
+      this.db.insert(schema.humanContactStatus).values({
+        callId: call_id,
+        ...updates,
+      }).run()
+    }
   }
 
-  private rowToHumanContact(row: any): HumanContact {
+  private rowToHumanContact(result: any): HumanContact {
+    const hc = result.human_contacts
+    const status = result.human_contact_status
+
     return {
-      run_id: row.run_id,
-      call_id: row.call_id,
+      run_id: hc.runId,
+      call_id: hc.callId,
       spec: {
-        msg: row.msg,
-        subject: row.subject || undefined,
-        channel: row.channel ? JSON.parse(row.channel) : undefined,
-        response_options: row.response_options ? JSON.parse(row.response_options) : undefined,
-        state: row.state ? JSON.parse(row.state) : undefined,
+        msg: hc.msg,
+        subject: hc.subject ?? undefined,
+        channel: hc.channel ? JSON.parse(hc.channel) : undefined,
+        response_options: hc.responseOptions ? JSON.parse(hc.responseOptions) : undefined,
+        state: hc.state ? JSON.parse(hc.state) : undefined,
       },
       status: {
-        requested_at: row.requested_at ? new Date(row.requested_at) : new Date(),
-        responded_at: row.responded_at ? new Date(row.responded_at) : undefined,
-        response: row.response || undefined,
-        response_option_name: row.response_option_name || undefined,
+        requested_at: status?.requestedAt ? new Date(status.requestedAt) : new Date(),
+        responded_at: status?.respondedAt ? new Date(status.respondedAt) : undefined,
+        response: status?.response ?? undefined,
+        response_option_name: status?.responseOptionName ?? undefined,
       },
     }
   }
