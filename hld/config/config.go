@@ -101,7 +101,7 @@ func Load() (*Config, error) {
 func setDefaults(v *viper.Viper) {
 	v.SetDefault("socket_path", DefaultSocketPath)
 	v.SetDefault("database_path", DefaultDatabasePath)
-	v.SetDefault("api_base_url", "https://api.humanlayer.dev/humanlayer/v1")
+	v.SetDefault("api_base_url", "http://localhost:8082/humanlayer/v1")
 	v.SetDefault("log_level", "info")
 
 	// Convert string port to int
