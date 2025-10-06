@@ -604,11 +604,11 @@ export function validateConfig(): void {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Project installs dependencies: `cd humanlayer-api && npm install`
-- [ ] TypeScript compiles: `npm run build`
-- [ ] Database migration runs: `npm run migrate`
-- [ ] Type checking passes: `tsc --noEmit`
-- [ ] All files conform to style: `npm run format:check`
+- [x] Project installs dependencies: `cd humanlayer-api && npm install`
+- [x] TypeScript compiles: `npm run build`
+- [x] Database migration runs: `npm run migrate`
+- [x] Type checking passes: `tsc --noEmit`
+- [x] All files conform to style: `npm run format:check`
 
 #### Manual Verification:
 - [ ] Can run `npm run dev` and see "Server starting..." message
@@ -861,9 +861,9 @@ export const humanContactSchema = z.object({
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Auth middleware compiles: `tsc --noEmit`
-- [ ] Can create API key: Run migration script that creates test key
-- [ ] Error handler returns proper JSON: Unit test
+- [x] Auth middleware compiles: `tsc --noEmit`
+- [x] Can create API key: Run migration script that creates test key
+- [x] Error handler returns proper JSON: Unit test
 
 #### Manual Verification:
 - [ ] Request without Bearer token returns 401

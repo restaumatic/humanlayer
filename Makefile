@@ -33,6 +33,9 @@ check-hld:
 check-claudecode-go:
 	@$(MAKE) -C claudecode-go check VERBOSE=$(VERBOSE)
 
+check-api:
+	@$(MAKE) -C humanlayer-api check VERBOSE=$(VERBOSE)
+
 .PHONY: check-header
 check-header:
 	@sh -n ./hack/run_silent.sh || (echo "❌ Shell script syntax error in hack/run_silent.sh" && exit 1)
@@ -41,7 +44,7 @@ check-header:
 # Summary removed - tracking doesn't work across sub-makes
 
 .PHONY: check
-check: check-header check-hlyr check-wui check-hld check-claudecode-go
+check: check-header check-hlyr check-wui check-hld check-claudecode-go check-api
 
 .PHONY: test-hlyr
 test-hlyr: ## Test hlyr CLI tool
@@ -63,6 +66,10 @@ e2e-test: ## Run end-to-end REST API tests
 test-claudecode-go: ## Test claudecode-go
 	@$(MAKE) -C claudecode-go test VERBOSE=$(VERBOSE)
 
+.PHONY: test-api
+test-api: ## Test humanlayer-api
+	@$(MAKE) -C humanlayer-api test VERBOSE=$(VERBOSE)
+
 .PHONY: test-header
 test-header:
 	@sh -n ./hack/run_silent.sh || (echo "❌ Shell script syntax error in hack/run_silent.sh" && exit 1)
@@ -77,7 +84,7 @@ test-wui: ## Test humanlayer-wui
 	@$(MAKE) -C humanlayer-wui test VERBOSE=$(VERBOSE)
 
 .PHONY: test
-test: test-header test-hlyr test-wui test-hld test-claudecode-go
+test: test-header test-hlyr test-wui test-hld test-claudecode-go test-api
 
 .PHONY: check-test
 check-test: ## Run all checks and tests
