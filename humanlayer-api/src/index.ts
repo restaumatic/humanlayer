@@ -5,6 +5,7 @@ import { errorHandler } from './middleware/errorHandler.js'
 import { authenticateToken } from './middleware/auth.js'
 import functionCallRoutes from './routes/functionCalls.js'
 import contactRoutes from './routes/contacts.js'
+import slackRoutes from './routes/slack.js'
 import { getDb } from './db/database.js'
 
 // Validate configuration
@@ -18,6 +19,7 @@ export function createApp() {
 
   // Global middleware
   app.use(express.json())
+  app.use(express.urlencoded({ extended: true })) // For Slack form-encoded payloads
   app.use(requestLogger)
 
   // Health check (no auth required)
@@ -28,6 +30,9 @@ export function createApp() {
       timestamp: new Date().toISOString(),
     })
   })
+
+  // Slack webhook (no auth required - uses signature verification)
+  app.use('/slack', slackRoutes)
 
   // API routes with authentication
   const apiRouter = express.Router()
