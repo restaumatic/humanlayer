@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     is_active BOOLEAN NOT NULL DEFAULT 1
 );
 
-CREATE INDEX idx_api_keys_hash ON api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
 
 -- Function Calls table
 CREATE TABLE IF NOT EXISTS function_calls (
@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS function_calls (
     -- CONSTRAINT fk_status FOREIGN KEY (call_id) REFERENCES function_call_status(call_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_function_calls_run_id ON function_calls(run_id);
-CREATE INDEX idx_function_calls_created_at ON function_calls(created_at);
+CREATE INDEX IF NOT EXISTS idx_function_calls_run_id ON function_calls(run_id);
+CREATE INDEX IF NOT EXISTS idx_function_calls_created_at ON function_calls(created_at);
 
 -- Function Call Status table (1:1 with function_calls)
 CREATE TABLE IF NOT EXISTS function_call_status (
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS function_call_status (
     FOREIGN KEY (call_id) REFERENCES function_calls(call_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_function_call_status_approved ON function_call_status(approved);
+CREATE INDEX IF NOT EXISTS idx_function_call_status_approved ON function_call_status(approved);
 
 -- Human Contacts table
 CREATE TABLE IF NOT EXISTS human_contacts (
@@ -65,8 +65,8 @@ CREATE TABLE IF NOT EXISTS human_contacts (
     -- CONSTRAINT fk_status FOREIGN KEY (call_id) REFERENCES human_contact_status(call_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_human_contacts_run_id ON human_contacts(run_id);
-CREATE INDEX idx_human_contacts_created_at ON human_contacts(created_at);
+CREATE INDEX IF NOT EXISTS idx_human_contacts_run_id ON human_contacts(run_id);
+CREATE INDEX IF NOT EXISTS idx_human_contacts_created_at ON human_contacts(created_at);
 
 -- Human Contact Status table (1:1 with human_contacts)
 CREATE TABLE IF NOT EXISTS human_contact_status (
@@ -79,4 +79,4 @@ CREATE TABLE IF NOT EXISTS human_contact_status (
     FOREIGN KEY (call_id) REFERENCES human_contacts(call_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_human_contact_status_response ON human_contact_status(response);
+CREATE INDEX IF NOT EXISTS idx_human_contact_status_response ON human_contact_status(response);
