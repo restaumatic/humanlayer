@@ -38,6 +38,15 @@ export function createApp() {
   const apiRouter = express.Router()
   apiRouter.use(authenticateToken)
 
+  // Project endpoint
+  apiRouter.get('/project', (_req, res) => {
+    res.json({
+      name: 'Local Development',
+      slug: 'local-dev',
+      organization: 'localhost',
+    })
+  })
+
   // Mount route groups
   apiRouter.use('/function_calls', functionCallRoutes)
   apiRouter.use('/contact_requests', contactRoutes)
