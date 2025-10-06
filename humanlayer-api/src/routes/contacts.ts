@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { HumanContactService } from '../services/humanContactService.js'
-import { humanContactSchema } from '../utils/validators.js'
+import { humanContactSchema, humanContactResponseSchema } from '../utils/validators.js'
 import { getDb } from '../db/database.js'
 import { HumanContactRepository } from '../db/repositories/humanContactRepository.js'
 import { ChannelService } from '../services/channelService.js'
@@ -51,11 +51,12 @@ router.get('/:call_id', (req, res, next) => {
 // POST /agent/human_contacts/:call_id/respond
 router.post('/:call_id/respond', async (req, res, next) => {
   try {
+    const validated = humanContactResponseSchema.parse(req.body)
     const status = {
-      requested_at: req.body.requested_at ? new Date(req.body.requested_at) : undefined,
-      responded_at: new Date(req.body.responded_at),
-      response: req.body.response,
-      response_option_name: req.body.response_option_name,
+      requested_at: validated.requested_at ? new Date(validated.requested_at) : undefined,
+      responded_at: new Date(validated.responded_at),
+      response: validated.response,
+      response_option_name: validated.response_option_name,
     }
     const result = await service.respond(req.params.call_id, status)
     res.json(result)

@@ -54,22 +54,48 @@ export class HumanContactRepository {
     return this.rowToHumanContact(row)
   }
 
-  updateStatus(call_id: string, status: HumanContactStatus): void {
+  updateStatus(call_id: string, status: Partial<HumanContactStatus>): void {
+    // Build dynamic UPDATE query based on provided fields
+    const updates: string[] = []
+    const params: any[] = []
+
+    if ('requested_at' in status && status.requested_at !== undefined) {
+      updates.push('requested_at = ?')
+      params.push(
+        status.requested_at instanceof Date ? status.requested_at.toISOString() : status.requested_at
+      )
+    }
+
+    if ('responded_at' in status && status.responded_at !== undefined) {
+      updates.push('responded_at = ?')
+      params.push(
+        status.responded_at instanceof Date ? status.responded_at.toISOString() : status.responded_at
+      )
+    }
+
+    if ('response' in status && status.response !== undefined) {
+      updates.push('response = ?')
+      params.push(status.response)
+    }
+
+    if ('response_option_name' in status && status.response_option_name !== undefined) {
+      updates.push('response_option_name = ?')
+      params.push(status.response_option_name)
+    }
+
+    if (updates.length === 0) {
+      return // Nothing to update
+    }
+
+    params.push(call_id)
+
     const stmt = this.db.prepare(`
       UPDATE human_contact_status
-      SET
-        responded_at = ?,
-        response = ?,
-        response_option_name = ?
+      SET ${updates.join(', ')}
       WHERE call_id = ?
     `)
 
-    stmt.run(
-      status.responded_at?.toISOString() || null,
-      status.response || null,
-      status.response_option_name || null,
-      call_id
-    )
+    stmt.run(...params)
   }
 
   private rowToHumanContact(row: any): HumanContact {
@@ -83,14 +109,12 @@ export class HumanContactRepository {
         response_options: row.response_options ? JSON.parse(row.response_options) : undefined,
         state: row.state ? JSON.parse(row.state) : undefined,
       },
-      status: row.requested_at
-        ? {
-            requested_at: row.requested_at ? new Date(row.requested_at) : undefined,
-            responded_at: row.responded_at ? new Date(row.responded_at) : undefined,
-            response: row.response || undefined,
-            response_option_name: row.response_option_name || undefined,
-          }
-        : undefined,
+      status: {
+        requested_at: row.requested_at ? new Date(row.requested_at) : new Date(),
+        responded_at: row.responded_at ? new Date(row.responded_at) : undefined,
+        response: row.response || undefined,
+        response_option_name: row.response_option_name || undefined,
+      },
     }
   }
 }

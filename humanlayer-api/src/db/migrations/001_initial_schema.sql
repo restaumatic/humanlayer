@@ -2,7 +2,8 @@
 CREATE TABLE IF NOT EXISTS api_keys (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key_hash TEXT NOT NULL UNIQUE,
-    key_prefix TEXT NOT NULL,  -- First 8 chars for display (e.g., "sk-test-")
+    key_prefix TEXT,  -- First 8 chars for display (e.g., "sk-test-")
+    name TEXT,  -- Optional friendly name for the key
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_used_at DATETIME,
     is_active BOOLEAN NOT NULL DEFAULT 1
@@ -80,3 +81,11 @@ CREATE TABLE IF NOT EXISTS human_contact_status (
 );
 
 CREATE INDEX IF NOT EXISTS idx_human_contact_status_response ON human_contact_status(response);
+
+-- Seed default API key for development (hash of 'sk-test-key')
+INSERT OR IGNORE INTO api_keys (key_hash, name, is_active)
+VALUES (
+    '0d62f396c1317066f55a96086517047c737087c61eb2bf016b72e6298927b15b',
+    'Default Development Key',
+    1
+);

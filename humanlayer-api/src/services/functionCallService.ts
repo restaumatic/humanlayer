@@ -35,14 +35,17 @@ export class FunctionCallService {
     return functionCall
   }
 
-  async respond(call_id: string, status: FunctionCallStatus): Promise<FunctionCall> {
+  async respond(
+    call_id: string,
+    status: Partial<FunctionCallStatus> & { responded_at: Date }
+  ): Promise<FunctionCall> {
     const existing = this.repository.findById(call_id)
     if (!existing) {
       throw new ApiError(404, 'NOT_FOUND', `Function call ${call_id} not found`)
     }
 
     // Check if already decided
-    if (existing.status?.approved !== undefined && existing.status?.approved !== null) {
+    if (existing.status?.responded_at) {
       throw new ApiError(409, 'ALREADY_DECIDED', 'Approval decision already made')
     }
 

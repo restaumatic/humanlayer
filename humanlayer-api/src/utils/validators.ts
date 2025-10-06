@@ -80,3 +80,20 @@ export const humanContactSchema = z.object({
     })
     .optional(),
 })
+
+// Response schemas for the respond endpoints
+export const functionCallResponseSchema = z.object({
+  requested_at: z.string().datetime().optional(),
+  responded_at: z.string().datetime(),
+  approved: z.boolean(),
+  comment: z.string().optional(),
+  reject_option_name: z.string().optional(),
+  slack_message_ts: z.string().optional(),
+})
+
+export const humanContactResponseSchema = z.object({
+  requested_at: z.string().datetime().optional(),
+  responded_at: z.string().datetime(),
+  response: z.string(),
+  response_option_name: z.string().optional(),
+})

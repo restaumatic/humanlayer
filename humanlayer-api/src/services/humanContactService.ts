@@ -34,14 +34,17 @@ export class HumanContactService {
     return contact
   }
 
-  async respond(call_id: string, status: HumanContactStatus): Promise<HumanContact> {
+  async respond(
+    call_id: string,
+    status: Partial<HumanContactStatus> & { responded_at: Date }
+  ): Promise<HumanContact> {
     const existing = this.repository.findById(call_id)
     if (!existing) {
       throw new ApiError(404, 'NOT_FOUND', `Human contact ${call_id} not found`)
     }
 
     // Check if already responded
-    if (existing.status?.response) {
+    if (existing.status?.responded_at) {
       throw new ApiError(409, 'ALREADY_RESPONDED', 'Contact already has a response')
     }
 

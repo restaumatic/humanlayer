@@ -57,26 +57,58 @@ export class FunctionCallRepository {
     return this.rowToFunctionCall(row)
   }
 
-  updateStatus(call_id: string, status: FunctionCallStatus): void {
+  updateStatus(call_id: string, status: Partial<FunctionCallStatus>): void {
+    // Build dynamic UPDATE query based on provided fields
+    const updates: string[] = []
+    const params: any[] = []
+
+    if ('requested_at' in status && status.requested_at !== undefined) {
+      updates.push('requested_at = ?')
+      params.push(
+        status.requested_at instanceof Date ? status.requested_at.toISOString() : status.requested_at
+      )
+    }
+
+    if ('responded_at' in status && status.responded_at !== undefined) {
+      updates.push('responded_at = ?')
+      params.push(
+        status.responded_at instanceof Date ? status.responded_at.toISOString() : status.responded_at
+      )
+    }
+
+    if ('approved' in status && status.approved !== undefined) {
+      updates.push('approved = ?')
+      params.push(status.approved ? 1 : 0) // Convert boolean to integer for SQLite
+    }
+
+    if ('comment' in status && status.comment !== undefined) {
+      updates.push('comment = ?')
+      params.push(status.comment)
+    }
+
+    if ('reject_option_name' in status && status.reject_option_name !== undefined) {
+      updates.push('reject_option_name = ?')
+      params.push(status.reject_option_name)
+    }
+
+    if ('slack_message_ts' in status && status.slack_message_ts !== undefined) {
+      updates.push('slack_message_ts = ?')
+      params.push(status.slack_message_ts)
+    }
+
+    if (updates.length === 0) {
+      return // Nothing to update
+    }
+
+    params.push(call_id)
+
     const stmt = this.db.prepare(`
       UPDATE function_call_status
-      SET
-        responded_at = ?,
-        approved = ?,
-        comment = ?,
-        reject_option_name = ?,
-        slack_message_ts = ?
+      SET ${updates.join(', ')}
       WHERE call_id = ?
     `)
 
-    stmt.run(
-      status.responded_at?.toISOString() || null,
-      status.approved ?? null,
-      status.comment || null,
-      status.reject_option_name || null,
-      status.slack_message_ts || null,
-      call_id
-    )
+    stmt.run(...params)
   }
 
   private rowToFunctionCall(row: any): FunctionCall {
@@ -90,16 +122,15 @@ export class FunctionCallRepository {
         reject_options: row.reject_options ? JSON.parse(row.reject_options) : undefined,
         state: row.state ? JSON.parse(row.state) : undefined,
       },
-      status: row.requested_at
-        ? {
-            requested_at: new Date(row.requested_at),
-            responded_at: row.responded_at ? new Date(row.responded_at) : undefined,
-            approved: row.approved ?? undefined,
-            comment: row.comment || undefined,
-            reject_option_name: row.reject_option_name || undefined,
-            slack_message_ts: row.slack_message_ts || undefined,
-          }
-        : undefined,
+      status: {
+        requested_at: row.requested_at ? new Date(row.requested_at) : new Date(),
+        responded_at: row.responded_at ? new Date(row.responded_at) : undefined,
+        // Convert SQLite integer (0/1) to boolean, handle null/undefined
+        approved: row.approved !== null && row.approved !== undefined ? Boolean(row.approved) : undefined,
+        comment: row.comment || undefined,
+        reject_option_name: row.reject_option_name || undefined,
+        slack_message_ts: row.slack_message_ts || undefined,
+      },
     }
   }
 }

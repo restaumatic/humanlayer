@@ -1,9 +1,10 @@
 import { Router } from 'express'
 import { FunctionCallService } from '../services/functionCallService.js'
-import { functionCallSchema } from '../utils/validators.js'
+import { functionCallSchema, functionCallResponseSchema } from '../utils/validators.js'
 import { getDb } from '../db/database.js'
 import { FunctionCallRepository } from '../db/repositories/functionCallRepository.js'
 import { ChannelService } from '../services/channelService.js'
+import type { FunctionCallStatus } from '../types/models.js'
 
 const router = Router()
 
@@ -52,11 +53,14 @@ router.get('/:call_id', (req, res, next) => {
 // POST /agent/function_calls/:call_id/respond
 router.post('/:call_id/respond', async (req, res, next) => {
   try {
-    const status = {
-      requested_at: new Date(req.body.requested_at),
-      responded_at: new Date(req.body.responded_at),
-      approved: req.body.approved,
-      comment: req.body.comment,
+    const validated = functionCallResponseSchema.parse(req.body)
+    const status: Partial<FunctionCallStatus> & { responded_at: Date } = {
+      requested_at: validated.requested_at ? new Date(validated.requested_at) : undefined,
+      responded_at: new Date(validated.responded_at),
+      approved: validated.approved,
+      comment: validated.comment,
+      reject_option_name: validated.reject_option_name,
+      slack_message_ts: validated.slack_message_ts,
     }
     const result = await service.respond(req.params.call_id, status)
     res.json(result)

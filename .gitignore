@@ -185,3 +185,4 @@ hld/hld-dev
 hld/hld-nightly
 
 hlyr/*.bun-build
+.claude/settings.local.json
