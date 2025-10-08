@@ -139,6 +139,11 @@ func (h *SessionHandlers) CreateSession(ctx context.Context, req api.CreateSessi
 
 	// Check for draft flag in request
 	isDraft := req.Body.Draft != nil && *req.Body.Draft
+	slog.Info("DEBUG: CreateSession request",
+		"draft_ptr", req.Body.Draft,
+		"isDraft", isDraft,
+		"query", config.Query,
+	)
 
 	session, err := h.manager.LaunchSession(ctx, config, isDraft)
 	if err != nil {

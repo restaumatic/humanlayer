@@ -436,13 +436,15 @@ export class SessionsApi extends runtime.BaseAPI implements SessionsApiInterface
 
 
         let urlPath = `/sessions`;
+        let json = CreateSessionRequestToJSON(requestParameters['createSessionRequest'])
+        console.log("CreateSessionRequestToJSON", json)
 
         const response = await this.request({
             path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: CreateSessionRequestToJSON(requestParameters['createSessionRequest']),
+            body: json,
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => CreateSessionResponseFromJSON(jsonValue));

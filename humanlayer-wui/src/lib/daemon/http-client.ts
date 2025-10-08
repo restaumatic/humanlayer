@@ -127,6 +127,7 @@ export class HTTPDaemonClient implements IDaemonClient {
     params: LaunchSessionParams | LaunchSessionRequest,
   ): Promise<CreateSessionResponseData> {
     await this.ensureConnected()
+    console.log('Launching session with params', params);
 
     // Handle provider-specific model formatting
     let model: string | undefined = params.model
